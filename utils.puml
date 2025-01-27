@@ -1,0 +1,16 @@
+@startuml Utils
+skinparam groupInheritance 2
+
+package Utils
+{
+    package Binary
+    {
+        class BinaryFileReader
+        class BitStream
+        class DynamicLibraryLoader
+    }
+
+    class TimeManager
+}
+
+@enduml
