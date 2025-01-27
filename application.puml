@@ -52,12 +52,14 @@ package Graphics
         DIRECT3D11
         DIRECT3D12
     }
+    hide GraphicsAPIE methods
 
     class Context
     {
         - vector<const char*> m_layers
         - vector<const char*> m_instanceExtensions
-        + unique_ptr<Instance> m_instance
+        - GraphicsAPIE m_graphicsApi
+        + unique_ptr<InstanceABC> m_instance
 
         + void enumerateAvailableInstanceLayers() const
         + enumerateAvailableInstanceExtensions() const
@@ -65,32 +67,33 @@ package Graphics
     }
     Application *-- Context
 
-    class Instance
+    abstract InstanceABC
     {
         - const Context& cx
 
         + void* getHandle() const
     }
-    Context *-- Instance
+    Context *-- InstanceABC
     class InstanceVk
     {
         - unique_ptr<VkInstance> m_handle
 
         + VkInstance getHandle()
     }
-    Instance <|-- InstanceVk
+    InstanceABC <|-- InstanceVk
     class InstanceD3D12
-    Instance <|-- InstanceD3D12
+    InstanceABC <|-- InstanceD3D12
     class InstanceGL
-    Instance <|-- InstanceGL
+    InstanceABC <|-- InstanceGL
 
     class SwapChain
     {
         - vector<Image> m_images
         - vector<ImageView> m_imageViews
-        - int m_bufferingCount
+        - int m_frameInFlightCount
     }
-    note bottom : buffering and presentation management
+    note bottom of SwapChain : swapchain buffering (frames in flight)
+    note bottom of SwapChain : presentation management
     WindowABC *-- SwapChain
     class Surface
     WindowABC *-- Surface
@@ -123,6 +126,8 @@ package Graphics
 
         class Queue
         LogicalDevice *-right- Queue
+        class CommandPool
+        LogicalDevice *-- CommandPool
     }
 
     package DeviceMemory
@@ -130,40 +135,93 @@ package Graphics
         class Buffer
         class Image
         class ImageView
-        note bottom : from swap chain or whatever image handling system
         class Sampler
     }
 
     package DeviceAsset
     {
+        class VertexBuffer
+        class UniformBuffer
+
         class Texture
+        {
+            + shared_ptr<Image> image
+            + unique_ptr<ImageView> imageView
+            + unique_ptr<Sampler> sampler
+        }
 
         class Pipeline
+        {
+            - unique_ptr<PipelineLayout> m_pipelineLayout
+        }
         class Shader
         Pipeline *-- Shader
-        class Descriptors
-        Pipeline *-- Descriptors
+        class PipelineLayout
+        {
+            - unique_ptr<PipelineLayout> m_handle
+            - vector<DescriptorSetLayoutBinding> m_descriptorSetLayoutBindings
+            - vector<DescriptorSetLayout> m_descriptorSetLayouts
+        }
+        Pipeline *-- PipelineLayout
     }
 
     package Renderer
     {
+        enum BufferingTypeE
+        {
+            SINGLE
+            DOUBLE
+            TRIPLE
+        }
+        hide BufferingTypeE methods
+
         abstract RendererABC
         {
-            # shared_ptr<Pipeline> m_pipeline
-            # shared_ptr<ImageView> m_imageView
-            # unique_ptr<CommandPool> m_commandPool
-            # vector<CommandBuffer> m_commandBuffers
-            # int m_bufferingCount
+            # vector<BackBuffer> m_backBuffers
+            # BufferingTypeE m_bufferingType
+            # vector<unique_ptr<SpecializedRendererABC>> m_specializedRenderers
+
+            + uint32_t acquireBackBuffer()
+            + void submitBackBuffer()
+            + void presentBackBuffer()
+            + void swapBuffers()
         }
-        note top of RendererABC : renders in an image with local command buffer
-        note top of RendererABC : buffering management
         Application *-- RendererABC
-        RendererABC *-- Pipeline
-        RendererABC *-- ImageView
-        class CommandPool
-        RendererABC *-right- CommandPool
-        class CommandBuffer
-        RendererABC *-- CommandBuffer
+
+        abstract SpecializedRendererABC
+        RendererABC *-right- SpecializedRendererABC
+        class MeshRenderer
+        {
+            - shared_ptr<Pipeline> m_pipeline
+            - unique_ptr<DescriptorPool> m_descriptorPool
+            - vector<DescriptorSet> m_descriptorSets
+            - vector<Buffer> m_uniformBuffers
+            - vector<void*> m_uniformBuffersMapped
+            - shared_ptr<Mesh> m_mesh
+            - shared_ptr<Material> m_material
+
+            + void recordBegin()
+            + void recordDescriptorCommands()
+            + void recordDrawCommands()
+            + void recordEnd()
+        }
+        SpecializedRendererABC <|-- MeshRenderer
+        class Material
+        {
+            - vector<Texture> m_textures
+        }
+        MeshRenderer *-- Material
+        Material *-- Pipeline
+        Material *-- Texture
+
+        class BackBuffer
+        {
+            + unique_ptr<CommandBuffer> commandBuffer
+            + unique_ptr<Semaphore> acquireSemaphore
+            + unique_ptr<Semaphore> renderSemaphore
+            + unique_ptr<Fence> inFlightFence
+        }
+        RendererABC *-right- BackBuffer
 
         class DynamicRenderer
         note bottom : VK_KHR_dynamic_rendering extension
@@ -177,8 +235,9 @@ package Graphics
 
         class RenderPass
         {
-            - unique_ptr<Framebuffer> m_framebuffer
+            - vector<unique_ptr<Framebuffer>> m_framebuffer
         }
+        note bottom : as much framebuffers as there are frames in flight
         LegacyRenderer *-- RenderPass
         Pipeline .. RenderPass
         interface FramebufferI
@@ -189,6 +248,7 @@ package Graphics
             - shared_ptr<ImageView> m_imageView
             - shared_ptr<RenderPass> m_renderPass
         }
+        note bottom : image view from swap chain or whatever image handling system
         FramebufferI <|-- ImageFramebuffer
         ImageFramebuffer *-- ImageView
         class ImageLessFramebuffer
@@ -197,11 +257,22 @@ package Graphics
     }
 }
 
-package EngineTypes
+package Engine
 {
-    class Color
+    class Transform
+    class Object
+    class Camera
 
-    class Vertex
+    package EngineTypes
+    {
+        class Color
+
+        class Vertex
+        class VertexDesc
+
+        class Uniform
+        class UniformDesc
+    }
 }
 
 package HostMemory
@@ -212,7 +283,22 @@ package HostMemory
     package Saved
     {
         class Mesh
+        {
+            - vector<Vertex> m_vertices
+            - vector<int> m_indices
+            - unique_ptr<Buffer> m_vertexBuffer
+            - unique_ptr<Buffer> m_indexBuffer
+            - unique_ptr<Texture> m_texture
+        }
         ResourceI <|-- Mesh
+        MeshRenderer *-- Mesh
+        class Texture
+        {
+            - unique_ptr<Image> m_image
+            - unique_ptr<ImageView> m_imageView
+            - unique_ptr<Sampler> m_sampler
+        }
+        ResourceI <|-- Texture
         class Scene
         ResourceI <|-- Scene
     }
