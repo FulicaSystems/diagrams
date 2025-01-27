@@ -260,8 +260,19 @@ package Graphics
 package Engine
 {
     class Transform
+    {
+        + vec3 position
+        + quaternion rotation
+        + vec3 scale
+    }
     class Object
+    class WorldObject
+    {
+        # Transform m_transform
+    }
+    Object <|-- WorldObject
     class Camera
+    WorldObject <|-- Camera
 
     package EngineTypes
     {
