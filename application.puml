@@ -180,6 +180,7 @@ package Graphics
             # vector<BackBuffer> m_backBuffers
             # BufferingTypeE m_bufferingType
             # vector<unique_ptr<SpecializedRendererABC>> m_specializedRenderers
+            # vector<shared_ptr<Pipeline>> m_pipelines
 
             + uint32_t acquireBackBuffer()
             + void submitBackBuffer()
@@ -187,12 +188,12 @@ package Graphics
             + void swapBuffers()
         }
         Application *-- RendererABC
+        RendererABC *-- Pipeline
 
         abstract SpecializedRendererABC
         RendererABC *-right- SpecializedRendererABC
         class MeshRenderer
         {
-            - shared_ptr<Pipeline> m_pipeline
             - unique_ptr<DescriptorPool> m_descriptorPool
             - vector<DescriptorSet> m_descriptorSets
             - vector<Buffer> m_uniformBuffers
@@ -211,7 +212,7 @@ package Graphics
             - vector<Texture> m_textures
         }
         MeshRenderer *-- Material
-        Material *-- Pipeline
+        Material ..> Pipeline
         Material *-- Texture
 
         class BackBuffer
