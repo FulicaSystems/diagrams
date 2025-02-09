@@ -3,6 +3,8 @@ skinparam groupInheritance 2
 
 package Utils
 {
+    package AI {}
+
     package Binary
     {
         class BinaryFileReader
@@ -10,7 +12,46 @@ package Utils
         class DynamicLibraryLoader
     }
 
-    class TimeManager
+    package Containers {}
+    package Multithread {}
+
+    class CheckLeak
+    class Derived
+    class InputManager
+    class Property
+    class Singleton
+
+    package Time
+    {
+        class TimeOrigin
+        class Epoch
+        TimeOrigin <|-- Epoch
+        class App
+        TimeOrigin <|-- App
+
+        class TimeManager
+        {
+            - double m_startTime
+            - double m_frameMark
+            - double m_deltaTime
+
+            - double steadyNow() const
+
+            + uint64_t since<Epoch, uint64_t>() const
+            + since<App, double>() const
+            + double noew() const
+
+            + void markFrame()
+            + double deltaTime() const
+            + double getFrameRate() const
+        }
+
+        class Measure
+        {
+            + time_point start()
+            + int64_t end()
+        }
+    }
 }
 
 @enduml
