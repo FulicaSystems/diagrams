@@ -267,6 +267,7 @@ package Graphics
         package renderstate << Rectangle >>
         {
             abstract RenderStateABC
+            note top : updated at the end of the Game Thread simulation
             RendererABC *-right- RenderStateABC
             class MeshRenderState << MeshRenderer >>
             {
