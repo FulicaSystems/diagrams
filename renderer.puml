@@ -222,28 +222,29 @@ package Graphics
         package renderstate << Rectangle >>
         {
             abstract RenderStateABC
+            {
+                # unique_ptr<DescriptorPool> m_descriptorPool
+                # vector<DescriptorSet> m_descriptorSets
+                # vector<Buffer> m_uniformBuffers
+                # vector<void*> m_uniformBuffersMapped
+
+                # shared_ptr<Material> m_material
+
+                + void recordDescriptorCommands()
+                + void recordDrawCommands()
+            }
             note top : updated at the end of the Game Thread simulation
             RendererABC *-right- RenderStateABC
             class MeshRenderState << MeshRenderer >>
             {
-                - unique_ptr<DescriptorPool> m_descriptorPool
-                - vector<DescriptorSet> m_descriptorSets
-                - vector<Buffer> m_uniformBuffers
-                - vector<void*> m_uniformBuffersMapped
                 - shared_ptr<Mesh> m_mesh
-                - shared_ptr<Material> m_material
-
-                + void recordBegin()
-                + void recordDescriptorCommands()
-                + void recordDrawCommands()
-                + void recordEnd()
             }
             RenderStateABC <|-- MeshRenderState
         }
         class Material
         {
             - vector<Texture> m_textures
-            - shared_ptr<Pipeline> m_pipeline
+            - weak_ptr<Pipeline> m_pipeline
         }
         MeshRenderState *-- Material
         Material ..> Pipeline
