@@ -1,0 +1,38 @@
+@startuml Engine
+skinparam groupInheritance 2
+
+package Engine
+{
+    class Transform
+    {
+        + vec3 position
+        + quaternion rotation
+        + vec3 scale
+    }
+    class Object
+    class WorldObject
+    {
+        # Transform m_transform
+    }
+    WorldObject .right. Transform
+    Object <|-- WorldObject
+    class Camera
+    WorldObject <|-- Camera
+
+    package EngineTypes
+    {
+        class Color
+        package vertex << Rectangle >>
+        {
+            class Vertex
+            class VertexDesc
+        }
+        package uniform << Rectangle >>
+        {
+            class Uniform
+            class UniformDesc
+        }
+    }
+}
+
+@enduml
