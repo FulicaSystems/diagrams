@@ -1,4 +1,4 @@
-@startuml Application Architecture
+@startuml Renderer
 skinparam groupInheritance 2
 
 package WSI << Window System Integration >>
