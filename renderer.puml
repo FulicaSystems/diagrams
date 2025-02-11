@@ -43,16 +43,19 @@ package Graphics
     class InstanceGL
     InstanceABC <|-- InstanceGL
 
-    class SwapChain
+    package presentation << Rectangle >>
     {
-        - vector<Image> m_images
-        - vector<ImageView> m_imageViews
-        - int m_frameInFlightCount
+        class SwapChain
+        {
+            - vector<Image> m_images
+            - vector<ImageView> m_imageViews
+            - int m_frameInFlightCount
+        }
+        note bottom of SwapChain : swapchain buffering (frames in flight)
+        note bottom of SwapChain : presentation management
+        class Surface
+        struct SurfaceDetailsT << SwapChainCompatibilityT >>
     }
-    note bottom of SwapChain : swapchain buffering (frames in flight)
-    note bottom of SwapChain : presentation management
-    class Surface
-    struct SurfaceDetailsT << SwapChainCompatibilityT >>
 
     package Device
     {
@@ -174,7 +177,7 @@ package Graphics
             Pipeline .. RenderPass
             interface FramebufferI
             LegacyRenderer *-- FramebufferI
-            FramebufferI ..> RenderPass
+            FramebufferI .left.> RenderPass
             class ImageFramebuffer
             {
                 - shared_ptr<ImageView> m_imageView
