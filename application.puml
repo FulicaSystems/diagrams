@@ -36,7 +36,7 @@ package Client << Client code >>
         - vector<shared_ptr<PhysicalDevice>> m_physicalDevices
         - vector<shared_ptr<LogicalDevice>> m_devices
         - shared_ptr<Scene> m_scene
-        - shared_ptr<RenderManagerABC> m_renderManager
+        - shared_ptr<RendererABC> m_renderer
         - shared_ptr<VideoDecoder> m_decoder
     }
     Application *-- WindowABC
@@ -150,19 +150,24 @@ package Graphics
             + unique_ptr<Sampler> sampler
         }
 
-        class Pipeline
+        package pipeline << Rectangle >>
         {
-            - unique_ptr<PipelineLayout> m_pipelineLayout
+            class Pipeline
+            {
+                - unique_ptr<Shader> m_shader
+                - unique_ptr<PipelineLayout> m_pipelineLayout
+            }
+            class Shader
+            Pipeline *-- Shader
+            class PipelineLayout
+            {
+                - unique_ptr<PipelineLayout> m_handle
+                - vector<DescriptorSetLayoutBinding> m_descriptorSetLayoutBindings
+                - vector<DescriptorSetLayout> m_descriptorSetLayouts
+            }
+            Pipeline *-- PipelineLayout
         }
-        class Shader
-        Pipeline *-- Shader
-        class PipelineLayout
-        {
-            - unique_ptr<PipelineLayout> m_handle
-            - vector<DescriptorSetLayoutBinding> m_descriptorSetLayoutBindings
-            - vector<DescriptorSetLayout> m_descriptorSetLayouts
-        }
-        Pipeline *-- PipelineLayout
+
     }
 
     package Renderer
@@ -175,43 +180,107 @@ package Graphics
         }
         hide BufferingTypeE methods
 
-        abstract RenderManagerABC
+        package renderer << Rectangle >>
         {
-            # vector<BackBuffer> m_backBuffers
-            # BufferingTypeE m_bufferingType
-            # vector<unique_ptr<RendererABC>> m_renderers
-            # vector<shared_ptr<Pipeline>> m_pipelines
+            abstract RendererABC
+            {
+                # vector<BackBuffer> m_backBuffers
+                # BufferingTypeE m_bufferingType
+                # vector<shared_ptr<RenderStateABC>> m_renderStates
+                # vector<shared_ptr<Pipeline>> m_pipelines
+                # unique_ptr<RenderGraph> m_renderGraph
 
-            + uint32_t acquireBackBuffer()
-            + void submitBackBuffer()
-            + void presentBackBuffer()
-            + void swapBuffers()
+                + uint32_t acquireBackBuffer()
+
+                + void recordBegin()
+                + void recordEnd()
+
+                + void submitBackBuffer()
+                + void presentBackBuffer()
+                + void swapBuffers()
+            }
+            note top : updated in the Render Thread with all the updated Render States
+            Application *-- RendererABC
+            RendererABC *-- Pipeline
+
+            class DynamicRenderer
+            note bottom : VK_KHR_dynamic_rendering extension
+            RendererABC <|-- DynamicRenderer
+            class LegacyRenderer << RenderPassBasedRenderer >>
+            {
+                - shared_ptr<RenderPass> m_renderPass
+            }
+            note left : with render passes
+            RendererABC <|-- LegacyRenderer
+
+            class RenderPass
+            {
+                - vector<unique_ptr<Framebuffer>> m_framebuffer
+            }
+            note bottom : as much framebuffers as there are frames in flight
+            LegacyRenderer *-- RenderPass
+            Pipeline .. RenderPass
+            interface FramebufferI
+            LegacyRenderer *-- FramebufferI
+            FramebufferI ..> RenderPass
+            class ImageFramebuffer
+            {
+                - shared_ptr<ImageView> m_imageView
+                - shared_ptr<RenderPass> m_renderPass
+            }
+            note bottom : image view from swap chain or whatever image handling system
+            FramebufferI <|-- ImageFramebuffer
+            ImageFramebuffer *-- ImageView
+            class ImageLessFramebuffer
+            note bottom : VK_KHR_imageless_framebuffer extension
+            FramebufferI <|-- ImageLessFramebuffer
         }
-        Application *-- RenderManagerABC
-        RenderManagerABC *-- Pipeline
 
-        abstract RendererABC
-        RenderManagerABC *-right- RendererABC
-        class MeshRenderer
+
+        package rendergraph << Rectangle >>
         {
-            - unique_ptr<DescriptorPool> m_descriptorPool
-            - vector<DescriptorSet> m_descriptorSets
-            - vector<Buffer> m_uniformBuffers
-            - vector<void*> m_uniformBuffersMapped
-            - shared_ptr<Mesh> m_mesh
-            - shared_ptr<Material> m_material
+            class RenderGraph
+            {
+                - vector<unique_ptr<RenderPhaseABC>> m_renderPhases
+            }
+            RendererABC *-- RenderGraph
 
-            + void recordBegin()
-            + void recordDescriptorCommands()
-            + void recordDrawCommands()
-            + void recordEnd()
+            abstract RenderPhaseABC
+            RenderGraph *-- RenderPhaseABC
+            class Opaque
+            RenderPhaseABC <|-- Opaque
+            class Transparent
+            RenderPhaseABC <|-- Transparent
+            class ShadowMapping
+            RenderPhaseABC <|-- ShadowMapping
         }
-        RendererABC <|-- MeshRenderer
+
+        package renderstate << Rectangle >>
+        {
+            abstract RenderStateABC
+            RendererABC *-right- RenderStateABC
+            class MeshRenderState << MeshRenderer >>
+            {
+                - unique_ptr<DescriptorPool> m_descriptorPool
+                - vector<DescriptorSet> m_descriptorSets
+                - vector<Buffer> m_uniformBuffers
+                - vector<void*> m_uniformBuffersMapped
+                - shared_ptr<Mesh> m_mesh
+                - shared_ptr<Material> m_material
+
+                + void recordBegin()
+                + void recordDescriptorCommands()
+                + void recordDrawCommands()
+                + void recordEnd()
+            }
+            RenderStateABC <|-- MeshRenderState
+        }
         class Material
         {
             - vector<Texture> m_textures
+            - shared_ptr<Pipeline> m_pipeline
         }
-        MeshRenderer *-- Material
+        MeshRenderState *-- Material
         Material ..> Pipeline
         Material *-- Texture
 
@@ -222,39 +291,7 @@ package Graphics
             + unique_ptr<Semaphore> renderSemaphore
             + unique_ptr<Fence> inFlightFence
         }
-        RenderManagerABC *-right- BackBuffer
-
-        class DynamicRenderer
-        note bottom : VK_KHR_dynamic_rendering extension
-        RenderManagerABC <|-- DynamicRenderer
-        class LegacyRenderer << RenderPassBasedRenderer >>
-        {
-            - shared_ptr<RenderPass> m_renderPass
-        }
-        note left : with render passes
-        RenderManagerABC <|-- LegacyRenderer
-
-        class RenderPass
-        {
-            - vector<unique_ptr<Framebuffer>> m_framebuffer
-        }
-        note bottom : as much framebuffers as there are frames in flight
-        LegacyRenderer *-- RenderPass
-        Pipeline .. RenderPass
-        interface FramebufferI
-        LegacyRenderer *-- FramebufferI
-        FramebufferI ..> RenderPass
-        class ImageFramebuffer
-        {
-            - shared_ptr<ImageView> m_imageView
-            - shared_ptr<RenderPass> m_renderPass
-        }
-        note bottom : image view from swap chain or whatever image handling system
-        FramebufferI <|-- ImageFramebuffer
-        ImageFramebuffer *-- ImageView
-        class ImageLessFramebuffer
-        note bottom : VK_KHR_imageless_framebuffer extension
-        FramebufferI <|-- ImageLessFramebuffer
+        RendererABC *-right- BackBuffer
     }
 }
 
@@ -289,34 +326,43 @@ package Engine
 
 package HostMemory
 {
-    class ResourceManager
-    interface ResourceI
-
-    package Saved
+    package resourcemanager << Rectangle >>
     {
-        class Mesh
-        {
-            - vector<Vertex> m_vertices
-            - vector<int> m_indices
-            - unique_ptr<Buffer> m_vertexBuffer
-            - unique_ptr<Buffer> m_indexBuffer
-            - unique_ptr<Texture> m_texture
-        }
-        ResourceI <|-- Mesh
-        MeshRenderer *-- Mesh
-        class Texture
-        {
-            - unique_ptr<Image> m_image
-            - unique_ptr<ImageView> m_imageView
-            - unique_ptr<Sampler> m_sampler
-        }
-        ResourceI <|-- Texture
-        class Scene
-        ResourceI <|-- Scene
-    }
+        class ResourceManager
+        interface ResourceI
 
-    class AssetManager
-    interface AssetI
+        package Saved
+        {
+            class Mesh
+            {
+                - vector<Vertex> m_vertices
+                - vector<int> m_indices
+                - unique_ptr<Buffer> m_vertexBuffer
+                - unique_ptr<Buffer> m_indexBuffer
+                - unique_ptr<Texture> m_texture
+            }
+            ResourceI <|-- Mesh
+            MeshRenderState *-- Mesh
+            class Texture
+            {
+                - unique_ptr<Image> m_image
+                - unique_ptr<ImageView> m_imageView
+                - unique_ptr<Sampler> m_sampler
+            }
+            ResourceI <|-- Texture
+            class Scene
+            {
+                - vector<shared_ptr<RenderStatesABC> m_renderStates
+            }
+            Scene *-left- RenderStateABC
+            ResourceI <|-- Scene
+        }
+    }
+    package assetmanager << Rectangle >>
+    {
+        class AssetManager
+        interface AssetI
+    }
 }
 
 package Video
