@@ -234,8 +234,16 @@ package Graphics
             class ImageLessFramebuffer
             note bottom : VK_KHR_imageless_framebuffer extension
             FramebufferI <|-- ImageLessFramebuffer
-        }
 
+            class BackBuffer
+            {
+                + unique_ptr<CommandBuffer> commandBuffer
+                + unique_ptr<Semaphore> acquireSemaphore
+                + unique_ptr<Semaphore> renderSemaphore
+                + unique_ptr<Fence> inFlightFence
+            }
+            RendererABC *-right- BackBuffer
+        }
 
         package rendergraph << Rectangle >>
         {
@@ -243,6 +251,7 @@ package Graphics
             {
                 - vector<unique_ptr<RenderPhaseABC>> m_renderPhases
             }
+            note top : each render phase of the graph have a RenderPass object ?
             RendererABC *-- RenderGraph
 
             abstract RenderPhaseABC
@@ -283,15 +292,6 @@ package Graphics
         MeshRenderState *-- Material
         Material ..> Pipeline
         Material *-- Texture
-
-        class BackBuffer
-        {
-            + unique_ptr<CommandBuffer> commandBuffer
-            + unique_ptr<Semaphore> acquireSemaphore
-            + unique_ptr<Semaphore> renderSemaphore
-            + unique_ptr<Fence> inFlightFence
-        }
-        RendererABC *-right- BackBuffer
     }
 }
 
