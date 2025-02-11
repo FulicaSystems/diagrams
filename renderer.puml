@@ -248,35 +248,6 @@ package Graphics
     }
 }
 
-package Engine
-{
-    class Transform
-    {
-        + vec3 position
-        + quaternion rotation
-        + vec3 scale
-    }
-    class Object
-    class WorldObject
-    {
-        # Transform m_transform
-    }
-    Object <|-- WorldObject
-    class Camera
-    WorldObject <|-- Camera
-
-    package EngineTypes
-    {
-        class Color
-
-        class Vertex
-        class VertexDesc
-
-        class Uniform
-        class UniformDesc
-    }
-}
-
 package HostMemory
 {
     package resourcemanager << Rectangle >>
@@ -316,17 +287,6 @@ package HostMemory
         class AssetManager
         interface AssetI
     }
-}
-
-package Video
-{
-    class VideoDecoder
-
-    class HardwareVideoDecoder
-    class Slot
-    HardwareVideoDecoder *-right- Slot
-    class Frame
-    Slot *-right- Frame
 }
 
 @enduml
