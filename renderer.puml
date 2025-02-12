@@ -68,7 +68,7 @@ package Graphics
             + unique_ptr<LogicalDevice> createDevice() const
         }
         class QueueFamily
-        PhysicalDevice *-- QueueFamily
+        PhysicalDevice *-right- QueueFamily
 
         class LogicalDevice << Device >>
         {
@@ -78,12 +78,13 @@ package Graphics
             + Queue presentQueue
             + unique_ptr<CommandPool> commandPool
         }
-        LogicalDevice .up.> PhysicalDevice
+        LogicalDevice o-up- PhysicalDevice
+        LogicalDevice -up- PhysicalDevice
 
         class Queue
         LogicalDevice *-right- Queue
         class CommandPool
-        LogicalDevice *-- CommandPool
+        LogicalDevice *-right- CommandPool
     }
 
     package DeviceMemory
@@ -156,7 +157,6 @@ package Graphics
                 + void swapBuffers()
             }
             note top : updated in the Render Thread with all the updated Render States
-            RendererABC *-- Pipeline
 
             class DynamicRenderer
             note bottom : VK_KHR_dynamic_rendering extension
@@ -165,7 +165,7 @@ package Graphics
             {
                 - shared_ptr<RenderPass> m_renderPass
             }
-            note left : with render passes
+            note right : with render passes
             RendererABC <|-- LegacyRenderer
 
             class RenderPass
@@ -174,7 +174,7 @@ package Graphics
             }
             note bottom : as much framebuffers as there are frames in flight
             LegacyRenderer *-- RenderPass
-            Pipeline .. RenderPass
+            RenderPass -- Pipeline
             interface FramebufferI
             LegacyRenderer *-- FramebufferI
             FramebufferI .left.> RenderPass
@@ -246,8 +246,8 @@ package Graphics
             - vector<Texture> m_textures
             - weak_ptr<Pipeline> m_pipeline
         }
-        MeshRenderState *-- Material
-        Material ..> Pipeline
+        RenderStateABC o-- Material
+        Material o-- Pipeline
         Material *-- Texture
     }
 }
@@ -270,7 +270,7 @@ package HostMemory
                 - unique_ptr<Texture> m_texture
             }
             ResourceI <|-- Mesh
-            MeshRenderState *-- Mesh
+            MeshRenderState o-- Mesh
             class Texture
             {
                 - unique_ptr<Image> m_image
@@ -282,7 +282,7 @@ package HostMemory
             {
                 - vector<shared_ptr<RenderStatesABC> m_renderStates
             }
-            Scene *-left- RenderStateABC
+            Scene -- RenderStateABC
             ResourceI <|-- Scene
         }
     }
