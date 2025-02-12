@@ -114,6 +114,10 @@ package Graphics
             {
                 - unique_ptr<Shader> m_shader
                 - unique_ptr<PipelineLayout> m_pipelineLayout
+
+                - shared_ptr<RenderPass> m_renderPass
+
+                + recordBind(CommandBuffer commandBuffer, uint32_t imageIndex)
             }
             class Shader
             Pipeline *-- Shader
@@ -230,8 +234,10 @@ package Graphics
 
                 # shared_ptr<Material> m_material
 
+                + void updateUniformBuffers()
+
                 + void recordDescriptorCommands()
-                + void recordDrawCommands()
+                + void recordDrawObjectCommands()
             }
             note top : updated at the end of the Game Thread simulation
             RendererABC *-right- RenderStateABC
