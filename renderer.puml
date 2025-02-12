@@ -45,7 +45,7 @@ package Graphics
 
     package presentation << Rectangle >>
     {
-        class SwapChain
+        class SwapChain #pink ##[bold]red
         {
             - vector<Image> m_images
             - vector<ImageView> m_imageViews
@@ -70,7 +70,7 @@ package Graphics
         class QueueFamily
         PhysicalDevice *-right- QueueFamily
 
-        class LogicalDevice << Device >>
+        class LogicalDevice << Device >> #pink ##[bold]red
         {
             - unique_ptr<VkDevice> m_handle
             - vector<const char*> m_deviceExtensions
@@ -78,6 +78,7 @@ package Graphics
             + Queue presentQueue
             + unique_ptr<CommandPool> commandPool
         }
+        note bottom : red classes are dependent of the logical device
         LogicalDevice o-up- PhysicalDevice
         LogicalDevice -up- PhysicalDevice
 
@@ -89,10 +90,10 @@ package Graphics
 
     package DeviceMemory
     {
-        class Buffer
-        class Image
-        class ImageView
-        class Sampler
+        class Buffer #pink ##[bold]red
+        class Image #pink ##[bold]red
+        class ImageView #pink ##[bold]red
+        class Sampler #pink ##[bold]red
     }
 
     package DeviceAsset
@@ -109,7 +110,7 @@ package Graphics
 
         package pipeline << Rectangle >>
         {
-            class Pipeline
+            class Pipeline #pink ##[bold]red
             {
                 - unique_ptr<Shader> m_shader
                 - unique_ptr<PipelineLayout> m_pipelineLayout
@@ -139,7 +140,7 @@ package Graphics
 
         package renderer << Rectangle >>
         {
-            abstract RendererABC
+            abstract RendererABC #pink ##[bold]red
             {
                 # vector<BackBuffer> m_backBuffers
                 # BufferingTypeE m_bufferingType
@@ -168,7 +169,7 @@ package Graphics
             note right : with render passes
             RendererABC <|-- LegacyRenderer
 
-            class RenderPass
+            class RenderPass #pink ##[bold]red
             {
                 - vector<unique_ptr<Framebuffer>> m_framebuffer
             }
@@ -176,8 +177,7 @@ package Graphics
             LegacyRenderer *-- RenderPass
             RenderPass -- Pipeline
             interface FramebufferI
-            LegacyRenderer *-- FramebufferI
-            FramebufferI .left.> RenderPass
+            RenderPass *-- FramebufferI
             class ImageFramebuffer
             {
                 - shared_ptr<ImageView> m_imageView
@@ -221,7 +221,7 @@ package Graphics
 
         package renderstate << Rectangle >>
         {
-            abstract RenderStateABC
+            abstract RenderStateABC #pink ##[bold]red
             {
                 # unique_ptr<DescriptorPool> m_descriptorPool
                 # vector<DescriptorSet> m_descriptorSets
@@ -273,9 +273,7 @@ package HostMemory
             MeshRenderState o-- Mesh
             class Texture
             {
-                - unique_ptr<Image> m_image
-                - unique_ptr<ImageView> m_imageView
-                - unique_ptr<Sampler> m_sampler
+                - vector<unsigned char> m_data
             }
             ResourceI <|-- Texture
             class Scene
