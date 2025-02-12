@@ -175,7 +175,7 @@ package Graphics
             }
             note bottom : as much framebuffers as there are frames in flight
             LegacyRenderer *-- RenderPass
-            RenderPass -- Pipeline
+            Pipeline o-up- RenderPass
             interface FramebufferI
             RenderPass *-- FramebufferI
             class ImageFramebuffer
@@ -206,7 +206,7 @@ package Graphics
             {
                 - vector<unique_ptr<RenderPhaseABC>> m_renderPhases
             }
-            note top : each render phase of the graph have a RenderPass object ?
+            note top : each render phase uses the array of render states (objects in the scene to be rendered)
             RendererABC *-- RenderGraph
 
             abstract RenderPhaseABC
