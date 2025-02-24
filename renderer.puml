@@ -284,7 +284,7 @@ package HostMemory
             ResourceI <|-- Texture
             class Scene
             {
-                - const CameraABC* m_mainCamera;
+                - CameraABC* m_mainCamera;
                 - vector<unique_ptr<CameraABC>> m_cameras;
                 - vector<shared_ptr<RenderStatesABC> m_renderStates
             }
