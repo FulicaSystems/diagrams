@@ -49,9 +49,8 @@ package Graphics
         {
             - vector<Image> m_images
             - vector<ImageView> m_imageViews
-            - int m_frameInFlightCount
         }
-        note bottom of SwapChain : swapchain buffering (frames in flight)
+        note bottom of SwapChain : swapchain buffering (number of images in the swapchain)
         note bottom of SwapChain : presentation management
         class Surface
         struct SurfaceDetailsT << SwapChainCompatibilityT >>
@@ -140,6 +139,7 @@ package Graphics
             DOUBLE
             TRIPLE
         }
+        note top : number of frames in flight
         hide BufferingTypeE methods
 
         package renderer << Rectangle >>
@@ -177,7 +177,7 @@ package Graphics
             {
                 - vector<unique_ptr<Framebuffer>> m_framebuffer
             }
-            note bottom : as much framebuffers as there are frames in flight
+            note bottom : as much framebuffers as there are frames in flight\n(number of command buffers, buffering type)
             LegacyRenderer *-- RenderPass
             Pipeline o-up- RenderPass
             interface FramebufferI
@@ -187,7 +187,7 @@ package Graphics
                 - shared_ptr<ImageView> m_imageView
                 - shared_ptr<RenderPass> m_renderPass
             }
-            note bottom : image view from swap chain or whatever image handling system
+            note bottom : image view from swap chain or\nwhatever image handling system
             FramebufferI <|-- ImageFramebuffer
             ImageFramebuffer *-- ImageView
             class ImageLessFramebuffer
@@ -210,7 +210,7 @@ package Graphics
             {
                 - vector<unique_ptr<RenderPhaseABC>> m_renderPhases
             }
-            note top : each render phase uses the array of render states (objects in the scene to be rendered)
+            note top : each render phase uses the array of render states\n(objects in the scene to be rendered)
             RendererABC *-- RenderGraph
 
             abstract RenderPhaseABC
@@ -284,6 +284,8 @@ package HostMemory
             ResourceI <|-- Texture
             class Scene
             {
+                - const CameraABC* m_mainCamera;
+                - vector<unique_ptr<CameraABC>> m_cameras;
                 - vector<shared_ptr<RenderStatesABC> m_renderStates
             }
             Scene -- RenderStateABC
