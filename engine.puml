@@ -16,12 +16,43 @@ package Engine
     }
     WorldObject .right. Transform
     Object <|-- WorldObject
-    class Camera
-    WorldObject <|-- Camera
+
+    package camera << Rectangle >>
+    {
+        abstract CameraABC
+        {
+            # float m_near
+            # float m_far
+
+            + mat4 getViewMatrix() const
+            + mat4 getProjectionMatrix() const
+        }
+        WorldObject <|-- CameraABC
+        class PerspectiveCamera
+        {
+            - float m_yFov
+            - float m_aspectRatio
+        }
+        CameraABC <|-- PerspectiveCamera
+        class OrthographicCamera
+        {
+            - float m_left
+            - float m_right
+            - float m_bottom
+            - float m_top
+        }
+        CameraABC <|-- OrthographicCamera
+    }
 
     package EngineTypes
     {
         class Color
+        {
+            + float r
+            + float g
+            + float b
+            + float a
+        }
         package vertex << Rectangle >>
         {
             class Vertex
